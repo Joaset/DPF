@@ -5183,6 +5183,8 @@ MonoBehaviour:
   velocidad: 5
   hudAbajo: 1.5
   hudArriba: 0
+  usarControlesTactiles: 1
+  suavidadMovimiento: 2
 --- !u!1 &8473369990322199822
 GameObject:
   m_ObjectHideFlags: 0

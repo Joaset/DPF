@@ -613,8 +613,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9c7713aecc8e8144abcd63b5f78641e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  vidaMaxima: 100
-  puntajeTotal: 0
+  vidaMaxima: 1000000
+  puntajeTotal: 1980
   jugador: 0
   juegoIniciado: 0
 --- !u!4 &61912619
@@ -3989,7 +3989,7 @@ MonoBehaviour:
   textMesh: {fileID: 963518592}
   barraVida: {fileID: 1464514942}
   barraVidaExtra: {fileID: 1400331825}
-  maxVidaBase: 100
+  maxVidaBase: 100000
   velocidadLerp: 5
 --- !u!114 &963518592
 MonoBehaviour:

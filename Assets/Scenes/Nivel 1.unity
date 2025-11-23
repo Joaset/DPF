@@ -2980,8 +2980,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9c7713aecc8e8144abcd63b5f78641e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  vidaMaxima: 100
-  puntajeTotal: 0
+  vidaMaxima: 100000
+  puntajeTotal: 230
   jugador: 1
   juegoIniciado: 0
 --- !u!4 &1469920833

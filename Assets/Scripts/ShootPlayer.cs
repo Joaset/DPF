@@ -37,6 +37,21 @@ public class ShootPlayer : MonoBehaviour
     private Image cooldownFill;
     private Image buttonGlow;
 
+    // Singleton para evitar duplicados
+    private static ShootPlayer instance;
+
+    void Awake()
+    {
+        // Verificar si ya existe una instancia
+        if (instance != null && instance != this)
+        {
+            Debug.Log("Ya existe un ShootPlayer, destruyendo duplicado");
+            Destroy(gameObject);
+            return;
+        }
+        instance = this;
+    }
+
     void Start()
     {
         puedeDisparar = true;
@@ -56,6 +71,22 @@ public class ShootPlayer : MonoBehaviour
 
     void CrearHUDDisparo()
     {
+        // PRIMERO: Buscar y destruir todos los botones de disparo existentes
+        GameObject[] botonesExistentes = GameObject.FindGameObjectsWithTag("ShootButton");
+        foreach (GameObject boton in botonesExistentes)
+        {
+            Debug.Log("Destruyendo botón de disparo duplicado: " + boton.name);
+            Destroy(boton);
+        }
+
+        // También buscar por nombre
+        GameObject botonPorNombre = GameObject.Find("ShootButton");
+        if (botonPorNombre != null)
+        {
+            Debug.Log("Destruyendo botón encontrado por nombre");
+            Destroy(botonPorNombre);
+        }
+
         // Buscar o crear el Canvas
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null)
@@ -67,12 +98,19 @@ public class ShootPlayer : MonoBehaviour
             canvasObj.AddComponent<GraphicRaycaster>();
         }
 
-        // Crear objeto principal del botón - TAMAÑO AUMENTADO
+        // Crear objeto principal del botón
         shootButtonObj = new GameObject("ShootButton");
+        shootButtonObj.tag = "ShootButton"; // Añadir tag para encontrarlo fácilmente
         shootButtonObj.transform.SetParent(canvas.transform, false);
         
+        // IMPORTANTE: Si el canvas está en DontDestroyOnLoad, el botón también
+        if (canvas.gameObject.scene.name == "DontDestroyOnLoad")
+        {
+            Debug.Log("El Canvas está en DontDestroyOnLoad");
+        }
+        
         RectTransform buttonRect = shootButtonObj.AddComponent<RectTransform>();
-        buttonRect.sizeDelta = new Vector2(200, 200); // Aumentado de 150 a 200
+        buttonRect.sizeDelta = new Vector2(200, 200);
         buttonRect.anchorMin = new Vector2(1, 0);
         buttonRect.anchorMax = new Vector2(1, 0);
         buttonRect.pivot = new Vector2(1, 0);
@@ -93,7 +131,6 @@ public class ShootPlayer : MonoBehaviour
         bgRect.sizeDelta = Vector2.zero;
         bgRect.anchoredPosition = Vector2.zero;
         
-        // Crear sprite circular perfecto
         shootButtonBackground.sprite = CrearSpriteCircularPerfecto(512);
         shootButtonBackground.color = new Color(0.15f, 0.15f, 0.15f, 0.95f);
         shootButtonBackground.raycastTarget = true;
@@ -146,13 +183,14 @@ public class ShootPlayer : MonoBehaviour
         iconRect.sizeDelta = new Vector2(-40, -40);
         iconRect.anchoredPosition = Vector2.zero;
         
-        // Crear sprite de mira profesional con anillos
         shootButtonIcon.sprite = CrearSpriteMiraDeArma();
-        shootButtonIcon.color = new Color(1f, 0.3f, 0f, 0.9f); // Color naranja/rojo
+        shootButtonIcon.color = new Color(1f, 0.3f, 0f, 0.9f);
         shootButtonIcon.raycastTarget = false;
 
         Debug.Log("HUD de disparo creado exitosamente - Tamaño: 200x200");
     }
+
+    // ... (resto de métodos CrearSpriteCircularPerfecto, CrearSpriteCircularBlur, CrearSpriteMiraDeArma igual)
 
     Sprite CrearSpriteCircularPerfecto(int resolution)
     {
@@ -161,18 +199,17 @@ public class ShootPlayer : MonoBehaviour
         Color[] pixels = new Color[resolution * resolution];
         
         Vector2 center = new Vector2(resolution / 2f, resolution / 2f);
-        float radius = resolution / 2f - 2f; // Pequeño margen para círculo perfecto
+        float radius = resolution / 2f - 2f;
         
         for (int y = 0; y < resolution; y++)
         {
             for (int x = 0; x < resolution; x++)
             {
-                Vector2 pos = new Vector2(x + 0.5f, y + 0.5f); // Centrado de píxel
+                Vector2 pos = new Vector2(x + 0.5f, y + 0.5f);
                 float distance = Vector2.Distance(pos, center);
                 
                 if (distance <= radius)
                 {
-                    // Anti-aliasing en el borde
                     float alpha = 1f;
                     if (distance > radius - 2f)
                     {
@@ -210,7 +247,7 @@ public class ShootPlayer : MonoBehaviour
                 float distance = Vector2.Distance(pos, center);
                 
                 float alpha = 1f - Mathf.Clamp01(distance / radius);
-                alpha = Mathf.Pow(alpha, 2.5f); // Blur más suave y definido
+                alpha = Mathf.Pow(alpha, 2.5f);
                 
                 pixels[y * resolution + x] = new Color(1, 1, 1, alpha);
             }
@@ -229,7 +266,6 @@ public class ShootPlayer : MonoBehaviour
         texture.filterMode = FilterMode.Bilinear;
         Color[] pixels = new Color[resolution * resolution];
         
-        // Inicializar todo transparente
         for (int i = 0; i < pixels.Length; i++)
         {
             pixels[i] = Color.clear;
@@ -237,7 +273,6 @@ public class ShootPlayer : MonoBehaviour
         
         Vector2 center = new Vector2(resolution / 2f, resolution / 2f);
         
-        // Función auxiliar para dibujar círculo
         System.Action<float, float, Color> DibujarAnillo = (radio, grosor, color) =>
         {
             for (int y = 0; y < resolution; y++)
@@ -249,13 +284,11 @@ public class ShootPlayer : MonoBehaviour
                     
                     if (distance >= radio - grosor / 2f && distance <= radio + grosor / 2f)
                     {
-                        // Anti-aliasing
                         float distanciaDesdeLinea = Mathf.Abs(distance - radio);
                         float alpha = 1f - Mathf.Clamp01((distanciaDesdeLinea - grosor / 2f + 1f) / 2f);
                         Color pixelColor = color;
                         pixelColor.a *= alpha;
                         
-                        // Mezclar con el color existente
                         Color existing = pixels[y * resolution + x];
                         pixels[y * resolution + x] = Color.Lerp(existing, pixelColor, pixelColor.a);
                     }
@@ -263,7 +296,6 @@ public class ShootPlayer : MonoBehaviour
             }
         };
         
-        // Función para dibujar línea horizontal o vertical
         System.Action<bool, float, float, float, Color> DibujarLinea = (esHorizontal, posicion, inicio, fin, color) =>
         {
             for (int i = (int)inicio; i < (int)fin; i++)
@@ -286,18 +318,10 @@ public class ShootPlayer : MonoBehaviour
             }
         };
         
-        // === DIBUJAR MIRA ===
-        
-        // Anillo exterior grueso
         DibujarAnillo(240f, 6f, Color.white);
-        
-        // Anillo medio
         DibujarAnillo(180f, 4f, Color.white);
-        
-        // Anillo interior
         DibujarAnillo(120f, 4f, Color.white);
         
-        // Punto central (pequeño círculo sólido)
         for (int y = 0; y < resolution; y++)
         {
             for (int x = 0; x < resolution; x++)
@@ -317,23 +341,14 @@ public class ShootPlayer : MonoBehaviour
             }
         }
         
-        // Cruz de mira (líneas que salen del centro)
         float lineaInicio = 15f;
         float lineaFin = 80f;
         
-        // Línea superior
         DibujarLinea(false, center.x, center.y + lineaInicio, center.y + lineaFin, Color.white);
-        
-        // Línea inferior
         DibujarLinea(false, center.x, center.y - lineaFin, center.y - lineaInicio, Color.white);
-        
-        // Línea izquierda
         DibujarLinea(true, center.y, center.x - lineaFin, center.x - lineaInicio, Color.white);
-        
-        // Línea derecha
         DibujarLinea(true, center.y, center.x + lineaInicio, center.x + lineaFin, Color.white);
         
-        // Marcas adicionales en los anillos (4 puntos cardinales en el anillo medio)
         System.Action<float, float> DibujarMarca = (angulo, radio) =>
         {
             float rad = angulo * Mathf.Deg2Rad;
@@ -362,11 +377,10 @@ public class ShootPlayer : MonoBehaviour
             }
         };
         
-        // Marcas en los puntos cardinales del anillo medio
-        DibujarMarca(0f, 180f);    // Derecha
-        DibujarMarca(90f, 180f);   // Arriba
-        DibujarMarca(180f, 180f);  // Izquierda
-        DibujarMarca(270f, 180f);  // Abajo
+        DibujarMarca(0f, 180f);
+        DibujarMarca(90f, 180f);
+        DibujarMarca(180f, 180f);
+        DibujarMarca(270f, 180f);
         
         texture.SetPixels(pixels);
         texture.Apply();
@@ -376,21 +390,18 @@ public class ShootPlayer : MonoBehaviour
 
     void Update()
     {
-        // Cooldown timer
         if (tiempoSiguienteAtaque > 0)
         {
             tiempoSiguienteAtaque -= Time.deltaTime;
             ActualizarCooldownVisual();
         }
 
-        // Efecto de brillo pulsante
         if (useMobileControls && buttonGlow != null)
         {
             float pulso = Mathf.PingPong(Time.time * 2f, 1f);
             buttonGlow.color = new Color(1f, 0.3f, 0f, 0.2f + pulso * 0.3f);
         }
 
-        // Controles PC
         if (!useMobileControls)
         {
             ShootPC();
@@ -452,7 +463,6 @@ public class ShootPlayer : MonoBehaviour
             float porcentajeCooldown = tiempoSiguienteAtaque / tiempoEntreAtaques;
             cooldownFill.fillAmount = porcentajeCooldown;
 
-            // Cambiar color del botón según estado
             if (shootButtonBackground != null)
             {
                 if (porcentajeCooldown > 0)
@@ -474,7 +484,6 @@ public class ShootPlayer : MonoBehaviour
         CancelInvoke("DesactivarDisparoDoble");
         Invoke("DesactivarDisparoDoble", duracion);
 
-        // Efecto visual en el botón de disparo
         if (useMobileControls && shootButtonBackground != null)
         {
             StartCoroutine(EfectoDisparoDobleBoton());
@@ -488,7 +497,6 @@ public class ShootPlayer : MonoBehaviour
 
         while (disparoDoble)
         {
-            // Pulso de color
             float tiempo = 0;
             while (tiempo < 0.5f && disparoDoble)
             {
@@ -526,5 +534,20 @@ public class ShootPlayer : MonoBehaviour
     public void SetItemCreado(bool item)
     {
         itemCreado = item;
+    }
+
+    void OnDestroy()
+    {
+        // Limpiar referencias estáticas
+        if (instance == this)
+        {
+            instance = null;
+        }
+
+        // Destruir el botón si existe
+        if (shootButtonObj != null)
+        {
+            Destroy(shootButtonObj);
+        }
     }
 }

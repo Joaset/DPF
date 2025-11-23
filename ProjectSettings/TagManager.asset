@@ -9,6 +9,7 @@ TagManager:
   - Meteo
   - EnemyCuracion
   - EnemyRojo
+  - ShootButton
   layers:
   - Default
   - TransparentFX
